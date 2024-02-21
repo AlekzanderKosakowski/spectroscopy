@@ -20,7 +20,7 @@ def smooth(wave, flux, nbin):
     return(smooth_wave, smooth_flux)
 
 
-def mark_feature(lambda_, name=None):
+def mark_feature(lambda_, color=None, name=None):
     '''
     Apply vertical lines to the 1D spectrum subplot
     '''
@@ -31,8 +31,8 @@ def mark_feature(lambda_, name=None):
     # o_lines = [7775.39, 4701.184, 6156.77, 6158.18, 4046.113, 4701.184]
     # fe_lines = [5169.0282, 5171.4384, 5172.6843, 4920.51, 4383.56, 5196.3391, 4920.51]
     # na_lines = [5889.973, 5895.940, 4249.410, 4249.410]
-                
-    ax2.axvline(lambda_, linestyle='--', linewidth=0.25, label=name if name else "", alpha=1.0)
+
+    ax2.axvline(lambda_, linestyle='--', linewidth=0.5, color=color if color else "red", label=name if name else "", alpha=1.0)
 
 
 
@@ -68,8 +68,8 @@ if __name__ =="__main__":
         sys.exit()
 
     # Adjust the lower and upper bounds for the wavelength grid. This will affect the image colorbar scaling.
-    wmin = 3600
-    wmax = 9500
+    wmin = 3700
+    wmax = 5000
 
     min_x = []
     max_x = []
@@ -135,7 +135,7 @@ if __name__ =="__main__":
     X, Y = np.meshgrid(X, Y)
     Z = LinearNDInterpolator(list(zip(x,y)), z, rescale=True)(X, Y) # Must keep rescale=True or the final plot looks like junk.
 
-    ax.pcolormesh(X, Y, Z, shading='auto', cmap="binary_r", vmin=0.5) # Adjust vmin and vmax to emphasize specific features.
+    ax.pcolormesh(X, Y, Z, shading='auto', cmap="binary_r") # Adjust vmin and vmax to emphasize specific features.
 
     ax.set_ylim(0.0, 2.0)
     ax.set_ylabel("Orbital Phase")
@@ -147,8 +147,10 @@ if __name__ =="__main__":
 
 
     # Add visual markers to the plot to help locate specific features.
-    mark_feature(5889.973)
-    mark_RV(5889.973, -20)
+    mark_feature(3933.66, "dodgerblue")
+    mark_feature(4481.33, "magenta")
+    mark_feature(4471.6, "dodgerblue")
+    # mark_RV(5889.973, -20)
 
     for p in observed_phase: # Mark the locations of the observed orbital phases
         ax.axhline(p, color='black', linewidth=0.5, linestyle='--', label="Observed Spectra")
@@ -168,8 +170,14 @@ if __name__ =="__main__":
     w0 = file[0].header["CRVAL1"]
     dw = file[0].header["CD1_1"]
     wave = np.array([w0 + k*dw for k in range(len(flux))])
+    ind = np.where((wave>=wmin) & (wave<=wmax))
+    flux = flux[ind]
+    wave = wave[ind]
+
     fnu = wave**2 / 299792458e2 * flux*1e-17
     wave, fnu = smooth(wave, fnu, 3)
     ax2.plot(wave, fnu/np.median(fnu), linewidth=0.5, color='black')
+
+    plt.savefig(f"images/trailed_spectrum.jpg", dpi=200)
 
     plt.show()
